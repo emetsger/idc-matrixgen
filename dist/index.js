@@ -50,8 +50,8 @@ function run() {
             let matrix = JSON.parse('{}');
             let matrixtype = typeof matrix;
             core.debug(`1. Typeof matrix: ${matrixtype}`);
-            const strMatrix = core.getInput('matrix');
-            if (strMatrix.trim() !== '') {
+            if (core.getInput('matrix').length > 0) {
+                const strMatrix = core.getInput('matrix');
                 core.debug(`parsing ${strMatrix}`);
                 matrix = JSON.parse(strMatrix);
                 matrixtype = typeof matrix;
