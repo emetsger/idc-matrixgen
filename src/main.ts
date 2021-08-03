@@ -14,10 +14,15 @@ async function run(): Promise<void> {
     const fileGlob: string = core.getInput('glob')
 
     let matrix = JSON.parse('{}')
+    let matrixtype: string = typeof matrix
+    core.debug(`1. Typeof matrix: ${matrixtype}`)
     const strMatrix = core.getInput('matrix')
 
     if (strMatrix.trim() !== '') {
+      core.debug(`parsing ${strMatrix}`)
       matrix = JSON.parse(strMatrix)
+      matrixtype = typeof matrix
+      core.debug(`2. Typeof matrix: ${matrixtype}`)
     }
 
     const append: boolean = core.getBooleanInput('append')
@@ -41,6 +46,9 @@ async function run(): Promise<void> {
       case INCLUDE_KEY:
       case EXCLUDE_KEY: {
         core.debug(`Got include or exclude key: ${key}`)
+        matrixtype = typeof matrix
+        core.debug(`3. Typeof matrix: ${matrixtype}`)
+
         let arr: object[] = []
         if (key in matrix && append) {
           // get the exising array and append to it
@@ -61,8 +69,9 @@ async function run(): Promise<void> {
       }
       default: {
         core.debug(`Got key: ${key}`)
-        const matrixtype: string = typeof matrix
-        core.debug(`Typeof matrix: ${matrixtype}`)
+        matrixtype = typeof matrix
+        core.debug(`4. Typeof matrix: ${matrixtype}`)
+
         let arr: string[] = []
         if (key in matrix && append) {
           // get the exising array and append to it
