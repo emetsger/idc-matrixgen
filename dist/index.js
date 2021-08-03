@@ -37,22 +37,60 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(186));
 const glob = __importStar(__nccwpck_require__(90));
+const INCLUDE_KEY = 'include';
+const EXCLUDE_KEY = 'exclude';
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            let testdir = core.getInput('testdir');
-            if (!testdir.endsWith('/')) {
-                testdir = `${testdir}/`;
+            let dir = core.getInput('dir');
+            if (!dir.endsWith('/')) {
+                dir = `${dir}/`;
             }
-            const testglob = core.getInput('glob');
-            core.debug(`testdir is ${testdir}`); // debug is only output if you set the secret `ACTIONS_RUNNER_DEBUG` to true
-            core.debug(`glob is ${testglob}`);
-            const globber = yield glob.create(`${testdir}${testglob}`);
+            const fileGlob = core.getInput('glob');
+            let matrix = JSON.parse('{}');
+            const strMatrix = core.getInput('matrix');
+            if (strMatrix.trim() !== '') {
+                matrix = JSON.parse(strMatrix);
+            }
+            const append = core.getBooleanInput('append');
+            const key = core.getInput('key');
+            core.debug(`dir is ${dir}`);
+            core.debug(`glob is ${fileGlob}`);
+            core.debug(`matrix is ${matrix}`);
+            core.debug(`append is ${append}`);
+            core.debug(`key is ${key}`);
+            const globber = yield glob.create(`${dir}${fileGlob}`);
             const files = yield globber.glob();
             for (const file of files) {
                 core.debug(`Got file: ${file}`);
             }
-            core.setOutput('files', files);
+            let arr = [``];
+            switch (key) {
+                case INCLUDE_KEY:
+                case EXCLUDE_KEY:
+                    core.debug(`Got include or exclude key: ${key}`);
+                    break;
+                default: {
+                    {
+                        if (key in matrix && append) {
+                            // get the exising array and append to it
+                            arr = matrix[key];
+                        }
+                        else if (key in matrix && !append) {
+                            // overwrite the existing array
+                            matrix[key] = arr;
+                        }
+                        else {
+                            // key is not in the matrix, use the empty array
+                            matrix[key] = arr;
+                        }
+                    }
+                    arr.push(...files);
+                    break;
+                }
+            }
+            core.debug(`Output matrix: ${matrix}`);
+            core.setOutput('matrix', matrix);
         }
         catch (error) {
             core.setFailed(error.message);
