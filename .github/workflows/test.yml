@@ -32,7 +32,7 @@ jobs:
         env:
           ACTIONS_RUNNER_DEBUG: true
         with:
-          matrix: ${{ fromJSON(steps.moo.outputs.matrix) }}
+          matrix: ${{ toJSON(steps.moo.outputs.matrix) }}
           key: test
           dir: './'
           glob: '*.js'
