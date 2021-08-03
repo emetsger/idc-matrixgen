@@ -12,7 +12,7 @@ async function run(): Promise<void> {
     core.debug(`testdir is ${testdir}`) // debug is only output if you set the secret `ACTIONS_RUNNER_DEBUG` to true
     core.debug(`glob is ${testglob}`)
 
-    const globber = await glob.create(`${testdir}${testglob}`)
+    const globber = await glob.create(`${testglob}`)
     const files = await globber.glob()
 
     for (const file of files) {
