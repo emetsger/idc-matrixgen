@@ -48,9 +48,14 @@ function run() {
             }
             const fileGlob = core.getInput('glob');
             let matrix = JSON.parse('{}');
+            let matrixtype = typeof matrix;
+            core.debug(`1. Typeof matrix: ${matrixtype}`);
             const strMatrix = core.getInput('matrix');
             if (strMatrix.trim() !== '') {
+                core.debug(`parsing ${strMatrix}`);
                 matrix = JSON.parse(strMatrix);
+                matrixtype = typeof matrix;
+                core.debug(`2. Typeof matrix: ${matrixtype}`);
             }
             const append = core.getBooleanInput('append');
             const key = core.getInput('key');
@@ -68,6 +73,8 @@ function run() {
                 case INCLUDE_KEY:
                 case EXCLUDE_KEY: {
                     core.debug(`Got include or exclude key: ${key}`);
+                    matrixtype = typeof matrix;
+                    core.debug(`3. Typeof matrix: ${matrixtype}`);
                     let arr = [];
                     if (key in matrix && append) {
                         // get the exising array and append to it
@@ -90,8 +97,8 @@ function run() {
                 }
                 default: {
                     core.debug(`Got key: ${key}`);
-                    const matrixtype = typeof matrix;
-                    core.debug(`Typeof matrix: ${matrixtype}`);
+                    matrixtype = typeof matrix;
+                    core.debug(`4. Typeof matrix: ${matrixtype}`);
                     let arr = [];
                     if (key in matrix && append) {
                         // get the exising array and append to it
