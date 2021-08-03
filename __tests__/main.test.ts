@@ -31,3 +31,22 @@ test('list tests', async () => {
 //   }
 //   console.log(cp.execFileSync(np, [ip], options).toString())
 // })
+
+test('test defaults', () => {
+  // defaults
+  process.env['INPUT_APPEND'] = 'true'
+  process.env['INPUT_KEY'] = 'test'
+  process.env['INPUT_INCLUDE'] = 'false'
+  process.env['INPUT_EXCLUDE'] = 'false'
+
+  process.env['INPUT_DIR'] = path.join(__dirname, 'testdir')
+  process.env['INPUT_GLOB'] = '*.sh'
+
+  const np = process.execPath
+  const ip = path.join(__dirname, '..', 'lib', 'main.js')
+  const options: cp.ExecFileSyncOptions = {
+    env: process.env
+  }
+
+  console.log(cp.execFileSync(np, [ip], options).toString())
+})
