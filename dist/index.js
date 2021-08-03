@@ -35,6 +35,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.apply = void 0;
 const core = __importStar(__nccwpck_require__(186));
 const glob = __importStar(__nccwpck_require__(90));
 const path = __importStar(__nccwpck_require__(622));
@@ -84,6 +85,9 @@ function run() {
     });
 }
 function apply(include, exclude, key, matrix, append, files) {
+    if (include && exclude) {
+        throw new Error('"include" and "exclude" are mutually exclusive, only one may be true');
+    }
     if (include || exclude) {
         let param;
         if (include) {
@@ -131,6 +135,7 @@ function apply(include, exclude, key, matrix, append, files) {
     }
     return matrix;
 }
+exports.apply = apply;
 run();
 
 
