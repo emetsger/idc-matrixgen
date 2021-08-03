@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import * as glob from '@actions/glob'
+import * as path from 'path'
 
 const INCLUDE = 'include'
 const EXCLUDE = 'exclude'
@@ -49,9 +50,11 @@ async function run(): Promise<void> {
     const globber = await glob.create(`${dir}${fileGlob}`)
     const files = await globber.glob()
 
-    for (const file of files) {
-      core.debug(`Got file: ${file}`)
-    }
+    // eslint-disable-next-line github/array-foreach
+    files.forEach((v, i, arr) => {
+      arr[i] = path.basename(v)
+      core.debug(`Got file ${v}, added as ${arr[i]}`)
+    })
 
     if (include || exclude) {
       let param = ''
