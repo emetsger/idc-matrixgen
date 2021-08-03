@@ -1,6 +1,9 @@
 import * as core from '@actions/core'
 import * as glob from '@actions/glob'
 
+const INCLUDE = 'include'
+const EXCLUDE = 'exclude'
+
 async function run(): Promise<void> {
   try {
     let dir: string = core.getInput('dir')
@@ -51,20 +54,27 @@ async function run(): Promise<void> {
     }
 
     if (include || exclude) {
-      core.debug(`Got include or exclude key: ${key}`)
+      let param = ''
+      if (include) {
+        param = INCLUDE
+      } else {
+        param = EXCLUDE
+      }
+
+      core.debug(`Got ${param} with key: ${key}`)
       matrixtype = typeof matrix
       core.debug(`3. Typeof matrix: ${matrixtype}`)
 
       let arr: object[] = []
-      if (key in matrix && append) {
+      if (param in matrix && append) {
         // get the exising array and append to it
-        arr = matrix[key]
-      } else if (key in matrix && !append) {
+        arr = matrix[param]
+      } else if (param in matrix && !append) {
         // overwrite the existing array
-        matrix[key] = arr
+        matrix[param] = arr
       } else {
         // key is not in the matrix, use the empty array
-        matrix[key] = arr
+        matrix[param] = arr
       }
       for (const file of files) {
         const obj = JSON.parse('{}')
