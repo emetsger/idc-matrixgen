@@ -53,7 +53,7 @@ function run() {
             if (core.getInput('matrix').length > 0) {
                 const strMatrix = core.getInput('matrix');
                 core.debug(`using ${strMatrix} as a literal?`);
-                matrix = JSON.parse(`${strMatrix}`);
+                matrix = JSON.parse(JSON.parse(`${strMatrix}`));
                 matrixtype = typeof matrix;
                 core.debug(`2. Typeof matrix: ${matrixtype}`);
             }
