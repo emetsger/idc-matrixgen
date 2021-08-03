@@ -29,6 +29,9 @@ inputs:
     required: false
     description: 'If the results should be added as an "exclude" to the matrix, mutually exclusive of "include"'
     default: 'false'
+outputs:
+  matrix:
+    description: 'The resulting matrix'
 runs:
   using: 'node12'
   main: 'dist/index.js'
