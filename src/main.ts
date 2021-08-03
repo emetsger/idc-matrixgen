@@ -1,12 +1,11 @@
 import * as core from '@actions/core'
 import * as glob from '@actions/glob'
 
-const INCLUDE_KEY: string = "include"
-const EXCLUDE_KEY: string = "exclude"
+const INCLUDE_KEY = 'include'
+const EXCLUDE_KEY = 'exclude'
 
 async function run(): Promise<void> {
   try {
-
     let dir: string = core.getInput('dir')
     if (!dir.endsWith('/')) {
       dir = `${dir}/`
@@ -15,9 +14,9 @@ async function run(): Promise<void> {
     const fileGlob: string = core.getInput('glob')
 
     let matrix = JSON.parse('{}')
-    const strMatrix = core.getInput('matrix');
+    const strMatrix = core.getInput('matrix')
 
-    if (strMatrix.trim() !== "") {
+    if (strMatrix.trim() !== '') {
       matrix = JSON.parse(strMatrix)
     }
 
@@ -25,7 +24,7 @@ async function run(): Promise<void> {
 
     const key: string = core.getInput('key')
 
-    core.debug(`dir is ${dir}`);
+    core.debug(`dir is ${dir}`)
     core.debug(`glob is ${fileGlob}`)
     core.debug(`matrix is ${matrix}`)
     core.debug(`append is ${append}`)
@@ -38,28 +37,19 @@ async function run(): Promise<void> {
       core.debug(`Got file: ${file}`)
     }
 
-    let arr: string[] = [""]
+    let arr: string[] = [``]
 
     switch (key) {
       case INCLUDE_KEY:
-      case EXCLUDE_KEY: {
-        if ((key in matrix) && append) {
-          // append to the existing array
-
-        } else if ((key in matrix) && !append) {
-
-        } else {
-
-        }
+      case EXCLUDE_KEY:
+        core.debug(`Got include or exclude key: ${key}`)
         break
-      }  
       default: {
         {
-          let arr: string[] = [""]
-          if ((key in matrix) && append) {
+          if (key in matrix && append) {
             // get the exising array and append to it
             arr = matrix[key]
-          } else if ((key in matrix) && !append) {
+          } else if (key in matrix && !append) {
             // overwrite the existing array
             matrix[key] = arr
           } else {
@@ -71,9 +61,9 @@ async function run(): Promise<void> {
         break
       }
     }
-    
+
     core.debug(`Output matrix: ${matrix}`)
-    core.setOutput("matrix", matrix)
+    core.setOutput('matrix', matrix)
   } catch (error) {
     core.setFailed(error.message)
   }
