@@ -17,6 +17,10 @@ test('wait 500 ms', async () => {
   expect(delta).toBeGreaterThan(450)
 })
 
+test('list tests', async () => {
+  // TODO
+})
+
 // shows how the runner will run a javascript action with env / stdout protocol
 test('test runs', () => {
   process.env['INPUT_MILLISECONDS'] = '500'
