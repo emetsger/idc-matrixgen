@@ -37,6 +37,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(186));
 const glob = __importStar(__nccwpck_require__(90));
+const path = __importStar(__nccwpck_require__(622));
 const INCLUDE = 'include';
 const EXCLUDE = 'exclude';
 function run() {
@@ -73,9 +74,11 @@ function run() {
             core.debug(`include is ${include}`);
             const globber = yield glob.create(`${dir}${fileGlob}`);
             const files = yield globber.glob();
-            for (const file of files) {
-                core.debug(`Got file: ${file}`);
-            }
+            // eslint-disable-next-line github/array-foreach
+            files.forEach((v, i, arr) => {
+                arr[i] = path.basename(v);
+                core.debug(`Got file ${v}, added as ${arr[i]}`);
+            });
             if (include || exclude) {
                 let param = '';
                 if (include) {
