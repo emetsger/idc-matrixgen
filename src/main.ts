@@ -61,6 +61,8 @@ async function run(): Promise<void> {
       }
       default: {
         core.debug(`Got key: ${key}`)
+        const matrixtype: string = typeof matrix
+        core.debug(`Typeof matrix: ${matrixtype}`)
         let arr: string[] = []
         if (key in matrix && append) {
           // get the exising array and append to it
