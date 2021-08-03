@@ -5,6 +5,10 @@ import * as path from 'path'
 const INCLUDE = 'include'
 const EXCLUDE = 'exclude'
 
+interface Matrix {
+  [index: string]: string[] | object[]
+}
+
 async function run(): Promise<void> {
   try {
     let dir: string = core.getInput('dir')
@@ -14,16 +18,11 @@ async function run(): Promise<void> {
 
     const fileGlob: string = core.getInput('glob')
 
-    let matrix = JSON.parse('{}')
-    let matrixtype: string = typeof matrix
-    core.debug(`1. Typeof matrix: ${matrixtype}`)
+    let matrix: Matrix = JSON.parse('{}')
 
     if (core.getInput('matrix').length > 0) {
       const strMatrix = core.getInput('matrix')
-      core.debug(`using ${strMatrix} as a literal?`)
       matrix = JSON.parse(`${strMatrix}`)
-      matrixtype = typeof matrix
-      core.debug(`2. Typeof matrix: ${matrixtype}`)
     }
 
     const append: boolean = core.getBooleanInput('append')
@@ -56,58 +55,66 @@ async function run(): Promise<void> {
       core.debug(`Got file ${v}, added as ${arr[i]}`)
     })
 
-    if (include || exclude) {
-      let param = ''
-      if (include) {
-        param = INCLUDE
-      } else {
-        param = EXCLUDE
-      }
-
-      core.debug(`Got ${param} with key: ${key}`)
-      matrixtype = typeof matrix
-      core.debug(`3. Typeof matrix: ${matrixtype}`)
-
-      let arr: object[] = []
-      if (param in matrix && append) {
-        // get the exising array and append to it
-        arr = matrix[param]
-      } else if (param in matrix && !append) {
-        // overwrite the existing array
-        matrix[param] = arr
-      } else {
-        // key is not in the matrix, use the empty array
-        matrix[param] = arr
-      }
-      for (const file of files) {
-        const obj = JSON.parse('{}')
-        obj[key] = file
-        arr.push(obj)
-      }
-    } else {
-      core.debug(`Got key: ${key}`)
-      matrixtype = typeof matrix
-      core.debug(`4. Typeof matrix: ${matrixtype}`)
-
-      let arr: string[] = []
-      if (key in matrix && append) {
-        // get the exising array and append to it
-        arr = matrix[key]
-      } else if (key in matrix && !append) {
-        // overwrite the existing array
-        matrix[key] = arr
-      } else {
-        // key is not in the matrix, use the empty array
-        matrix[key] = arr
-      }
-      arr.push(...files)
-    }
+    matrix = apply(include, exclude, key, matrix, append, files)
 
     core.debug(`Output matrix: ${matrix}`)
     core.setOutput('matrix', matrix)
   } catch (error) {
     core.setFailed(error.message)
   }
+}
+
+function apply(
+  include: boolean,
+  exclude: boolean,
+  key: string,
+  matrix: Matrix,
+  append: boolean,
+  files: string[]
+): Matrix {
+  if (include || exclude) {
+    let param: string
+    if (include) {
+      param = INCLUDE
+    } else {
+      param = EXCLUDE
+    }
+
+    core.debug(`Got ${param} with key: ${key}`)
+
+    let arr: object[] = []
+    if (param in matrix && append) {
+      // get the exising array and append to it
+      arr = matrix[param] as object[]
+    } else if (param in matrix && !append) {
+      // overwrite the existing array
+      matrix[param] = arr
+    } else {
+      // key is not in the matrix, use the empty array
+      matrix[param] = arr
+    }
+    for (const file of files) {
+      const obj = JSON.parse('{}')
+      obj[key] = file
+      arr.push(obj)
+    }
+  } else {
+    core.debug(`Got key: ${key}`)
+
+    let arr: string[] = []
+    if (key in matrix && append) {
+      // get the exising array and append to it
+      arr = matrix[key] as string[]
+    } else if (key in matrix && !append) {
+      // overwrite the existing array
+      matrix[key] = arr
+    } else {
+      // key is not in the matrix, use the empty array
+      matrix[key] = arr
+    }
+    arr.push(...files)
+  }
+  return matrix
 }
 
 run()
