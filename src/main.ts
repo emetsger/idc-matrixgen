@@ -37,25 +37,40 @@ async function run(): Promise<void> {
       core.debug(`Got file: ${file}`)
     }
 
-    let arr: string[] = [``]
-
     switch (key) {
       case INCLUDE_KEY:
-      case EXCLUDE_KEY:
+      case EXCLUDE_KEY: {
         core.debug(`Got include or exclude key: ${key}`)
+        let arr: object[] = []
+        if (key in matrix && append) {
+          // get the exising array and append to it
+          arr = matrix[key]
+        } else if (key in matrix && !append) {
+          // overwrite the existing array
+          matrix[key] = arr
+        } else {
+          // key is not in the matrix, use the empty array
+          matrix[key] = arr
+        }
+        for (const file of files) {
+          const obj = JSON.parse('{}')
+          obj[key] = file
+          arr.push(obj)
+        }
         break
+      }
       default: {
-        {
-          if (key in matrix && append) {
-            // get the exising array and append to it
-            arr = matrix[key]
-          } else if (key in matrix && !append) {
-            // overwrite the existing array
-            matrix[key] = arr
-          } else {
-            // key is not in the matrix, use the empty array
-            matrix[key] = arr
-          }
+        core.debug(`Got key: ${key}`)
+        let arr: string[] = []
+        if (key in matrix && append) {
+          // get the exising array and append to it
+          arr = matrix[key]
+        } else if (key in matrix && !append) {
+          // overwrite the existing array
+          matrix[key] = arr
+        } else {
+          // key is not in the matrix, use the empty array
+          matrix[key] = arr
         }
         arr.push(...files)
         break
