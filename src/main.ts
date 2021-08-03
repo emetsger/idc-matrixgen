@@ -19,7 +19,7 @@ async function run(): Promise<void> {
 
     if (core.getInput('matrix').length > 0) {
       const strMatrix = core.getInput('matrix')
-      core.debug(`parsing ${strMatrix}`)
+      core.debug(`parsing ${strMatrix} as a template`)
       matrix = JSON.parse(`${strMatrix}`)
       matrixtype = typeof matrix
       core.debug(`2. Typeof matrix: ${matrixtype}`)
