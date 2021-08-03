@@ -23,6 +23,6 @@ jobs:
         env:
           ACTIONS_RUNNER_DEBUG: true
         with:
-          testdir: .
+          testdir: './src'
           glob: '*.ts'
 
