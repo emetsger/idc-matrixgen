@@ -49,14 +49,9 @@ function run() {
             }
             const fileGlob = core.getInput('glob');
             let matrix = JSON.parse('{}');
-            let matrixtype = typeof matrix;
-            core.debug(`1. Typeof matrix: ${matrixtype}`);
             if (core.getInput('matrix').length > 0) {
                 const strMatrix = core.getInput('matrix');
-                core.debug(`using ${strMatrix} as a literal?`);
                 matrix = JSON.parse(`${strMatrix}`);
-                matrixtype = typeof matrix;
-                core.debug(`2. Typeof matrix: ${matrixtype}`);
             }
             const append = core.getBooleanInput('append');
             const key = core.getInput('key');
@@ -79,55 +74,7 @@ function run() {
                 arr[i] = path.basename(v);
                 core.debug(`Got file ${v}, added as ${arr[i]}`);
             });
-            if (include || exclude) {
-                let param = '';
-                if (include) {
-                    param = INCLUDE;
-                }
-                else {
-                    param = EXCLUDE;
-                }
-                core.debug(`Got ${param} with key: ${key}`);
-                matrixtype = typeof matrix;
-                core.debug(`3. Typeof matrix: ${matrixtype}`);
-                let arr = [];
-                if (param in matrix && append) {
-                    // get the exising array and append to it
-                    arr = matrix[param];
-                }
-                else if (param in matrix && !append) {
-                    // overwrite the existing array
-                    matrix[param] = arr;
-                }
-                else {
-                    // key is not in the matrix, use the empty array
-                    matrix[param] = arr;
-                }
-                for (const file of files) {
-                    const obj = JSON.parse('{}');
-                    obj[key] = file;
-                    arr.push(obj);
-                }
-            }
-            else {
-                core.debug(`Got key: ${key}`);
-                matrixtype = typeof matrix;
-                core.debug(`4. Typeof matrix: ${matrixtype}`);
-                let arr = [];
-                if (key in matrix && append) {
-                    // get the exising array and append to it
-                    arr = matrix[key];
-                }
-                else if (key in matrix && !append) {
-                    // overwrite the existing array
-                    matrix[key] = arr;
-                }
-                else {
-                    // key is not in the matrix, use the empty array
-                    matrix[key] = arr;
-                }
-                arr.push(...files);
-            }
+            matrix = apply(include, exclude, key, matrix, append, files);
             core.debug(`Output matrix: ${matrix}`);
             core.setOutput('matrix', matrix);
         }
@@ -135,6 +82,54 @@ function run() {
             core.setFailed(error.message);
         }
     });
+}
+function apply(include, exclude, key, matrix, append, files) {
+    if (include || exclude) {
+        let param;
+        if (include) {
+            param = INCLUDE;
+        }
+        else {
+            param = EXCLUDE;
+        }
+        core.debug(`Got ${param} with key: ${key}`);
+        let arr = [];
+        if (param in matrix && append) {
+            // get the exising array and append to it
+            arr = matrix[param];
+        }
+        else if (param in matrix && !append) {
+            // overwrite the existing array
+            matrix[param] = arr;
+        }
+        else {
+            // key is not in the matrix, use the empty array
+            matrix[param] = arr;
+        }
+        for (const file of files) {
+            const obj = JSON.parse('{}');
+            obj[key] = file;
+            arr.push(obj);
+        }
+    }
+    else {
+        core.debug(`Got key: ${key}`);
+        let arr = [];
+        if (key in matrix && append) {
+            // get the exising array and append to it
+            arr = matrix[key];
+        }
+        else if (key in matrix && !append) {
+            // overwrite the existing array
+            matrix[key] = arr;
+        }
+        else {
+            // key is not in the matrix, use the empty array
+            matrix[key] = arr;
+        }
+        arr.push(...files);
+    }
+    return matrix;
 }
 run();
 
