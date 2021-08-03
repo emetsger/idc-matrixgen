@@ -34,6 +34,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __asyncValues = (this && this.__asyncValues) || function (o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.apply = void 0;
 const core = __importStar(__nccwpck_require__(186));
@@ -42,6 +49,7 @@ const path = __importStar(__nccwpck_require__(622));
 const INCLUDE = 'include';
 const EXCLUDE = 'exclude';
 function run() {
+    var e_1, _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             let dir = core.getInput('dir');
@@ -69,19 +77,27 @@ function run() {
             core.debug(`exclude is ${exclude}`);
             core.debug(`include is ${include}`);
             const globber = yield glob.create(`${dir}${fileGlob}`, {});
-            const files = yield globber.glob();
-            // eslint-disable-next-line github/array-foreach
-            files.forEach((v, i, arr) => {
-                const basename = path.basename(v);
-                if (basename.startsWith('.')) {
-                    core.debug(`Ignoring hidden file ${v}`);
-                    delete arr[i];
+            const files = [];
+            try {
+                for (var _b = __asyncValues(globber.globGenerator()), _c; _c = yield _b.next(), !_c.done;) {
+                    const file = _c.value;
+                    const basename = path.basename(file);
+                    if (basename.startsWith('.')) {
+                        core.debug(`Ignoring hidden file ${file}`);
+                    }
+                    else {
+                        core.debug(`Got file ${file}, added as ${basename}`);
+                        files.push(basename);
+                    }
                 }
-                else {
-                    core.debug(`Got file ${v}, added as ${basename}`);
-                    arr[i] = basename;
+            }
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (_c && !_c.done && (_a = _b.return)) yield _a.call(_b);
                 }
-            });
+                finally { if (e_1) throw e_1.error; }
+            }
             matrix = apply(include, exclude, key, matrix, append, files);
             core.debug(`Output matrix: ${matrix}`);
             core.setOutput('matrix', matrix);
