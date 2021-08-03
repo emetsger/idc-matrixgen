@@ -19,15 +19,15 @@ inputs:
     default: 'true'
   key:
     required: true
-    description: 'The matrix key being added (e.g. "include", "exclude", or arbitrary properties like "test" or "version)'
+    description: 'The matrix key being added (e.g. arbitrary properties like "test" or "version")'
     default: 'test'
   include:
     required: false
-    description: 'If the results should be added as an "include" to the matrix, mutally exclusive of "exclude"'
+    description: 'If the results should be added as an "include" to the matrix; mutually exclusive of "exclude"'
     default: 'false'
   exclude:
     required: false
-    description: 'If the results should be added as an "exclude" to the matrix, mutually exclusive of "include"'
+    description: 'If the results should be added as an "exclude" to the matrix; mutually exclusive of "include"'
     default: 'false'
 outputs:
   matrix:

@@ -1,105 +1,193 @@
-<p align="center">
-  <a href="https://github.com/actions/typescript-action/actions"><img alt="typescript-action status" src="https://github.com/actions/typescript-action/workflows/build-test/badge.svg"></a>
-</p>
+# Test Matrix Generation for iDC
 
-# Create a JavaScript Action using TypeScript
+This is a Github action that is used to generate a matrix of tests for the iDC project.  By default, the action will discover test controllers matching `*.sh` in the `tests/` directory and include them in the test matrix.
 
-Use this template to bootstrap the creation of a TypeScript action.:rocket:
+The test matrix is based on file matching; more sophisticated usage allows for customizing a test matrix based on file names.  For example, nightly jobs can be run by including test controllers that match `*-nightly.sh`, or quick running smoke tests could be executed by matching `*-smoke.sh`.  Note that file globbing is implemented by [@actions/glob](https://github.com/actions/toolkit/tree/main/packages/glob), which may behave differently than expected (if your test matrix contains unusual results, the glob expression may be why).  
 
-This template includes compilation support, tests, a validation workflow, publishing, and versioning guidance.  
+> Globs matching filenames beginning with `.` are considered hidden, and will be excluded from the matrix by design.
 
-If you are new, there's also a simpler introduction.  See the [Hello World JavaScript Action](https://github.com/actions/hello-world-javascript-action)
+## Typical Usage
+Specify a job and a step to generate the test matrix, [saving it as an `output`](https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idoutputs) of the job.  Next, define a job which `needs` the previous job, and runs the tests using the `matrix` strategy.
 
-## Create an action from this template
-
-Click the `Use this Template` and provide the new repo details for your action
-
-## Code in Main
-
-> First, you'll need to have a reasonably modern version of `node` handy. This won't work with versions older than 9, for instance.
-
-Install the dependencies  
-```bash
-$ npm install
+Here's an example with minimal boilerplate:
+```yaml
+jobs:
+  setup-test-matrix:
+    name: Generate idc-isle-dc test matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.test-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout idc-isle-dc
+        uses: actions/checkout@v2
+      - name: Generate Test Matrix
+        id: test-matrix
+        uses: emetsger/idc-matrixgen@f228f237b87c9aa46b8a361d7adc62931682e210
+  run-tests:
+    name: Run idc-isle-dc tests
+    runs-on: ubuntu-latest
+    needs: setup-test-matrix
+    strategy:
+      matrix: ${{ fromJSON(needs.setup-test-matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout idc-isle-dc
+        uses: actions/checkout@v2
+      - name: Run ${matrix.test}
+        run: make test test=${matrix.test}
 ```
 
-Build the typescript and package it for distribution
-```bash
-$ npm run build && npm run package
-```
-
-Run the tests :heavy_check_mark:  
-```bash
-$ npm test
-
- PASS  ./index.test.js
-  ✓ throws invalid number (3ms)
-  ✓ wait 500 ms (504ms)
-  ✓ test runs (95ms)
-
-...
-```
-
-## Change action.yml
-
-The action.yml contains defines the inputs and output for your action.
-
-Update the action.yml with your name, description, inputs and outputs for your action.
-
-See the [documentation](https://help.github.com/en/articles/metadata-syntax-for-github-actions)
-
-## Change the Code
-
-Most toolkit and CI/CD operations involve async operations so the action is run in an async function.
-
-```javascript
-import * as core from '@actions/core';
-...
-
-async function run() {
-  try { 
-      ...
-  } 
-  catch (error) {
-    core.setFailed(error.message);
-  }
+This will produce a test matrix that includes _all_ test controllers in the `test` directory.  For example, at the time of this writing the matrix would look like:
+```json
+{
+  "test": [
+    "01-end-to-end.sh",
+    "02-static-config.sh",
+    "10-migration-backend-tests.sh",
+    "11-file-deletion-tests.sh",
+    "12-media-tests.sh",
+    "13-migration-entity-resolution.sh",
+    "20-export-tests.sh",
+    "21-large-file-derivatives.sh",
+    "21-role-permission-tests.sh"
+  ]
 }
-
-run()
 ```
 
-See the [toolkit documentation](https://github.com/actions/toolkit/blob/master/README.md#packages) for the various packages.
+## Exclude nightly jobs
 
-## Publish to a distribution branch
+There may be tests that are very long running, more suited to nightly execution.  They take to long to run when PRs are submitted for review and merging, so ideally the test matrix used for PRs would exclude them.  Here's an example with minimal boilerplate.  
 
-Actions are run from GitHub repos so we will checkin the packed dist folder. 
+Note that the first `step` generates the matrix, and the subsequent step amends it.  The `outputs` of the `setup-test-matrix` `job` was modified to reference the step that excluded the nightly jobs.
 
-Then run [ncc](https://github.com/zeit/ncc) and push the results:
-```bash
-$ npm run package
-$ git add dist
-$ git commit -a -m "prod dependencies"
-$ git push origin releases/v1
-```
-
-Note: We recommend using the `--license` option for ncc, which will create a license file for all of the production node modules used in your project.
-
-Your action is now published! :rocket: 
-
-See the [versioning documentation](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
-
-## Validate
-
-You can now validate the action by referencing `./` in a workflow in your repo (see [test.yml](.github/workflows/test.yml))
+The `matrix` input parameter accepts an existing matrix.  In this way, `steps` can amend the matrix step-by-step, using the output of the previous step for the next step.  Be sure that the `job` references the `output` of the last `step` so that subsequent jobs will use the fully amended matrix. 
 
 ```yaml
-uses: ./
-with:
-  milliseconds: 1000
+jobs:
+  setup-test-matrix:
+    name: Generate idc-isle-dc test matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.excludes-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout idc-isle-dc
+        uses: actions/checkout@v2
+      - name: Generate Test Matrix
+        id: test-matrix
+        uses: emetsger/idc-matrixgen@f228f237b87c9aa46b8a361d7adc62931682e210
+      - name: Exclude nightly jobs
+        id: excludes-matrix
+        uses: emetsger/idc-matrixgen@f228f237b87c9aa46b8a361d7adc62931682e210
+        with:          
+          glob: '*nightly*.sh'
+          exclude: true
+          matrix: ${{ steps.test-matrix.outputs.matrix }}
+  run-tests:
+    name: Run idc-isle-dc tests
+    runs-on: ubuntu-latest
+    needs: setup-test-matrix
+    strategy:
+      matrix: ${{ fromJSON(needs.setup-test-matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout idc-isle-dc
+        uses: actions/checkout@v2
+      - name: Run ${matrix.test}
+        run: make test test=${matrix.test}
+```
+If the `tests` directory contained a hypothetical test named `21-large-file-derivatives-nightly.sh`, the matrix used to run the tests would look like:
+```json
+{
+  "test": [
+    "01-end-to-end.sh",
+    "02-static-config.sh",
+    "10-migration-backend-tests.sh",
+    "11-file-deletion-tests.sh",
+    "12-media-tests.sh",
+    "13-migration-entity-resolution.sh",
+    "20-export-tests.sh",
+    "21-role-permission-tests.sh"
+  ],
+  "exclude": [
+    {
+      "test": "21-large-file-derivatives-nightly.sh"
+    }
+  ]
+}
 ```
 
-See the [actions tab](https://github.com/actions/typescript-action/actions) for runs of this action! :rocket:
+## Run Nightly Jobs
 
-## Usage:
+To generate a test matrix of nightly jobs, simply configure this action to match tests named `*nightly*.sh`.
 
-After testing you can [create a v1 tag](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md) to reference the stable and latest V1 action
+```yaml
+jobs:
+  setup-test-matrix:
+    name: Generate idc-isle-dc nightly matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.nightly-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout idc-isle-dc
+        uses: actions/checkout@v2
+      - name: Generate Nightly Test Matrix
+        id: nightly-matrix
+        uses: emetsger/idc-matrixgen@f228f237b87c9aa46b8a361d7adc62931682e210
+        with:          
+          glob: '*nightly*.sh'
+  run-tests:
+    name: Run nightly idc-isle-dc tests
+    runs-on: ubuntu-latest
+    needs: setup-test-matrix
+    strategy:
+      matrix: ${{ fromJSON(needs.setup-test-matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout idc-isle-dc
+        uses: actions/checkout@v2
+      - name: Run ${matrix.test}
+        run: make test test=${matrix.test}
+```
+
+If the `tests` directory contained a hypothetical test named `21-large-file-derivatives-nightly.sh`, the matrix used to run the tests would look like:
+```json
+{
+  "test": [
+    "21-large-file-derivatives-nightly.sh"
+  ]
+}
+```
+
+## Supported Inputs and Outputs
+
+You can always view the up-to-date list [here](./action.yml)
+
+### Inputs
+
+|Parameter|Required|Default Value|Description|
+|---|---|---|---|
+|`dir`|false|`tests/`|Directory (relative to the CWD) containing test controllers (e.g. the directory containing `01-end-to-end.sh`)|
+|`glob`|false|`*.sh`|File glob matching tests to include in the matrix|
+|`matrix`|false|`{}` (empty object)|Existing matrix to modify, useful when adding includes, excludes, or arbitrary matrix keys|
+|`append`|false|`true`|Whether to append to, or overwrite, matching entries in the supplied matrix|
+|`key`|true|`test`|The matrix key being added (e.g. arbitrary properties like `test` or `version`)|
+|`include`|false|`false`|If the results should be added as an `include` to the matrix, mutually exclusive of `exclude`|
+|`exclude`|false|`false`|If the results should be added as an `exclude` to the matrix, mutually exclusive of `include`|
+
+### Outputs
+
+|Parameter|Description|
+|---|---|
+|`matrix`|The resulting matrix|
+
+## Debugging
+
+To debug this action, add the secret `ACTIONS_STEP_DEBUG` to your repository, with a value of `true`.  Trigger the action (e.g. push a commit to a PR, or open a new PR), and debug statements should be emitted in the GH actions job log.
+
+## Testing
+
+Checkout this repository and run `npm run build ; npm run test`
+
+## Releasing
+
+Checkout this repository, develop your feature or bug fix.  Write a test.  Locally, insure everything is good by executing `npm run all`. 
+
+This will not only run tests and a linter, but it will also generate the distribution package in `dist/`.  Commit, tag, and push the changes.
+
