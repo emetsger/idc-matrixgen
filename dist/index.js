@@ -37,6 +37,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(186));
 const glob = __importStar(__nccwpck_require__(90));
+const INCLUDE = 'include';
+const EXCLUDE = 'exclude';
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -75,21 +77,28 @@ function run() {
                 core.debug(`Got file: ${file}`);
             }
             if (include || exclude) {
-                core.debug(`Got include or exclude key: ${key}`);
+                let param = '';
+                if (include) {
+                    param = INCLUDE;
+                }
+                else {
+                    param = EXCLUDE;
+                }
+                core.debug(`Got ${param} with key: ${key}`);
                 matrixtype = typeof matrix;
                 core.debug(`3. Typeof matrix: ${matrixtype}`);
                 let arr = [];
-                if (key in matrix && append) {
+                if (param in matrix && append) {
                     // get the exising array and append to it
-                    arr = matrix[key];
+                    arr = matrix[param];
                 }
-                else if (key in matrix && !append) {
+                else if (param in matrix && !append) {
                     // overwrite the existing array
-                    matrix[key] = arr;
+                    matrix[param] = arr;
                 }
                 else {
                     // key is not in the matrix, use the empty array
-                    matrix[key] = arr;
+                    matrix[param] = arr;
                 }
                 for (const file of files) {
                     const obj = JSON.parse('{}');
