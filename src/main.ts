@@ -47,19 +47,17 @@ async function run(): Promise<void> {
     core.debug(`include is ${include}`)
 
     const globber = await glob.create(`${dir}${fileGlob}`, {})
-    const files = await globber.glob()
+    const files: string[] = []
 
-    // eslint-disable-next-line github/array-foreach
-    files.forEach((v, i, arr) => {
-      const basename = path.basename(v)
+    for await (const file of globber.globGenerator()) {
+      const basename = path.basename(file)
       if (basename.startsWith('.')) {
-        core.debug(`Ignoring hidden file ${v}`)
-        delete arr[i]
+        core.debug(`Ignoring hidden file ${file}`)
       } else {
-        core.debug(`Got file ${v}, added as ${basename}`)
-        arr[i] = basename
+        core.debug(`Got file ${file}, added as ${basename}`)
+        files.push(basename)
       }
-    })
+    }
 
     matrix = apply(include, exclude, key, matrix, append, files)
 
