@@ -37,8 +37,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(186));
 const glob = __importStar(__nccwpck_require__(90));
-const INCLUDE_KEY = 'include';
-const EXCLUDE_KEY = 'exclude';
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -59,62 +57,64 @@ function run() {
             }
             const append = core.getBooleanInput('append');
             const key = core.getInput('key');
+            const include = core.getBooleanInput('include');
+            const exclude = core.getBooleanInput('exclude');
+            if (include && exclude) {
+                throw new Error('"include" and "exclude" are mutually exclusive, only one may be true');
+            }
             core.debug(`dir is ${dir}`);
             core.debug(`glob is ${fileGlob}`);
             core.debug(`matrix is ${matrix}`);
             core.debug(`append is ${append}`);
             core.debug(`key is ${key}`);
+            core.debug(`exclude is ${exclude}`);
+            core.debug(`include is ${include}`);
             const globber = yield glob.create(`${dir}${fileGlob}`);
             const files = yield globber.glob();
             for (const file of files) {
                 core.debug(`Got file: ${file}`);
             }
-            switch (key) {
-                case INCLUDE_KEY:
-                case EXCLUDE_KEY: {
-                    core.debug(`Got include or exclude key: ${key}`);
-                    matrixtype = typeof matrix;
-                    core.debug(`3. Typeof matrix: ${matrixtype}`);
-                    let arr = [];
-                    if (key in matrix && append) {
-                        // get the exising array and append to it
-                        arr = matrix[key];
-                    }
-                    else if (key in matrix && !append) {
-                        // overwrite the existing array
-                        matrix[key] = arr;
-                    }
-                    else {
-                        // key is not in the matrix, use the empty array
-                        matrix[key] = arr;
-                    }
-                    for (const file of files) {
-                        const obj = JSON.parse('{}');
-                        obj[key] = file;
-                        arr.push(obj);
-                    }
-                    break;
+            if (include || exclude) {
+                core.debug(`Got include or exclude key: ${key}`);
+                matrixtype = typeof matrix;
+                core.debug(`3. Typeof matrix: ${matrixtype}`);
+                let arr = [];
+                if (key in matrix && append) {
+                    // get the exising array and append to it
+                    arr = matrix[key];
                 }
-                default: {
-                    core.debug(`Got key: ${key}`);
-                    matrixtype = typeof matrix;
-                    core.debug(`4. Typeof matrix: ${matrixtype}`);
-                    let arr = [];
-                    if (key in matrix && append) {
-                        // get the exising array and append to it
-                        arr = matrix[key];
-                    }
-                    else if (key in matrix && !append) {
-                        // overwrite the existing array
-                        matrix[key] = arr;
-                    }
-                    else {
-                        // key is not in the matrix, use the empty array
-                        matrix[key] = arr;
-                    }
-                    arr.push(...files);
-                    break;
+                else if (key in matrix && !append) {
+                    // overwrite the existing array
+                    matrix[key] = arr;
                 }
+                else {
+                    // key is not in the matrix, use the empty array
+                    matrix[key] = arr;
+                }
+                for (const file of files) {
+                    const obj = JSON.parse('{}');
+                    obj[key] = file;
+                    arr.push(obj);
+                }
+            }
+            else {
+                core.debug(`Got key: ${key}`);
+                matrixtype = typeof matrix;
+                core.debug(`4. Typeof matrix: ${matrixtype}`);
+                let arr = [];
+                if (key in matrix && append) {
+                    // get the exising array and append to it
+                    arr = matrix[key];
+                }
+                else if (key in matrix && !append) {
+                    // overwrite the existing array
+                    matrix[key] = arr;
+                }
+                else {
+                    // key is not in the matrix, use the empty array
+                    matrix[key] = arr;
+                }
+                arr.push(...files);
             }
             core.debug(`Output matrix: ${matrix}`);
             core.setOutput('matrix', matrix);
