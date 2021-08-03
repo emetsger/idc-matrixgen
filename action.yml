@@ -2,7 +2,7 @@ name: 'IDC test matrix generator'
 description: 'Generates a matrix of test suites'
 author: 'emetsger@jhu.edu'
 inputs:
-  testdir:
+  dir:
     required: false
     description: 'Directory (relative to the CWD) containing test controllers (e.g. the directory containing 01-end-to-end.sh)'
     default: 'tests/'
@@ -10,6 +10,17 @@ inputs:
     required: false
     description: 'File glob matching tests to include in the matrix'
     default: '*.sh'
+  matrix:
+    required: false
+    description: 'Existing matrix to modify, useful when adding includes or excludes.'
+  append:
+    required: false
+    description: 'Whether to append to, or overwrite, matching entries in the supplied matrix'
+    default: 'true'
+  key:
+    required: true
+    description: 'The matrix key being added (e.g. "include", "exclude", or arbitrary properties like "test" or "version)'
+    default: 'test'
 runs:
   using: 'node12'
   main: 'dist/index.js'
