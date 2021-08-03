@@ -90,6 +90,8 @@ function run() {
                 }
                 default: {
                     core.debug(`Got key: ${key}`);
+                    const matrixtype = typeof matrix;
+                    core.debug(`Typeof matrix: ${matrixtype}`);
                     let arr = [];
                     if (key in matrix && append) {
                         // get the exising array and append to it
