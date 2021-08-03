@@ -54,36 +54,48 @@ test('test defaults', () => {
 
 test('test apply', () => {
   const initialMatrix = JSON.parse('{}')
-  const result = apply(false, false, 'test', initialMatrix, true, ["file1", "file2"])
+  const result = apply(false, false, 'test', initialMatrix, true, [
+    'file1',
+    'file2'
+  ])
   expect(Object.keys(result).length).toEqual(1)
   expect('test' in result).toEqual(true)
-  expect(result['test']).toEqual(["file1", "file2"])
+  expect(result['test']).toEqual(['file1', 'file2'])
 })
 
 test('test include', () => {
   const initialMatrix = JSON.parse('{}')
-  const result = apply(true, false, 'test', initialMatrix, true, ["file1", "file2"])
+  const result = apply(true, false, 'test', initialMatrix, true, [
+    'file1',
+    'file2'
+  ])
   expect(Object.keys(result).length).toEqual(1)
   expect('include' in result).toEqual(true)
-  expect(result['include']).toEqual([{ "test": "file1"}, {"test": "file2" }])
+  expect(result['include']).toEqual([{test: 'file1'}, {test: 'file2'}])
 })
 
 test('test exclude', () => {
   const initialMatrix = JSON.parse('{}')
-  const result = apply(false, true, 'test', initialMatrix, true, ["file1", "file2"])
+  const result = apply(false, true, 'test', initialMatrix, true, [
+    'file1',
+    'file2'
+  ])
   expect(Object.keys(result).length).toEqual(1)
   expect('exclude' in result).toEqual(true)
-  expect(result['exclude']).toEqual([{ "test": "file1"}, {"test": "file2" }])
+  expect(result['exclude']).toEqual([{test: 'file1'}, {test: 'file2'}])
 })
 
 test('apply then exclude', () => {
   const initialMatrix = JSON.parse('{}')
 
-  let result = apply(false, false, 'test', initialMatrix, true, ["file1", "file2"])
-  result = apply(false, true, 'test', result, true, ["file1"])
+  let result = apply(false, false, 'test', initialMatrix, true, [
+    'file1',
+    'file2'
+  ])
+  result = apply(false, true, 'test', result, true, ['file1'])
   expect(Object.keys(result).length).toEqual(2)
   expect('test' in result).toEqual(true)
-  expect(result['test']).toEqual(["file1", "file2"])
+  expect(result['test']).toEqual(['file1', 'file2'])
   expect('exclude' in result).toEqual(true)
-  expect(result['exclude']).toEqual([{ "test": "file1"}])
+  expect(result['exclude']).toEqual([{test: 'file1'}])
 })
