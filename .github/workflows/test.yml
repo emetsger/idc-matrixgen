@@ -42,7 +42,7 @@ jobs:
         env:
           ACTIONS_RUNNER_DEBUG: true
         with:
-          matrix: ${{ toJSON(steps.foo.outputs.matrix) }}
+          matrix: ${{ steps.foo.outputs.matrix }}
           key: exclude
           dir: './'
           glob: 'package*.js'
