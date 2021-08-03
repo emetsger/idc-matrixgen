@@ -5,7 +5,7 @@ import * as path from 'path'
 const INCLUDE = 'include'
 const EXCLUDE = 'exclude'
 
-interface Matrix {
+export interface Matrix {
   [index: string]: string[] | object[]
 }
 
@@ -64,7 +64,7 @@ async function run(): Promise<void> {
   }
 }
 
-function apply(
+export function apply(
   include: boolean,
   exclude: boolean,
   key: string,
@@ -72,6 +72,12 @@ function apply(
   append: boolean,
   files: string[]
 ): Matrix {
+  if (include && exclude) {
+    throw new Error(
+      '"include" and "exclude" are mutually exclusive, only one may be true'
+    )
+  }
+
   if (include || exclude) {
     let param: string
     if (include) {
