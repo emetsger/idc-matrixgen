@@ -1,10 +1,31 @@
 import * as core from '@actions/core'
 import * as glob from '@actions/glob'
 import * as path from 'path'
+import {Globber} from '@actions/glob'
 
 const INCLUDE = 'include'
 const EXCLUDE = 'exclude'
 
+/**
+ * Encapsulates arrays or objects that ar indexed by string keys.  The
+ * semantics of Matrix are documented here:
+ * https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idstrategymatrix
+ *
+ * The Matrix is used directly by GitHub Actions 'matrix' strategy, as e.g.:
+ *   run-tests:
+ *     name: Run nightly idc-isle-dc tests
+ *     runs-on: ubuntu-latest
+ *     needs: setup-test-matrix
+ *     strategy:
+ *     matrix: ${{ fromJSON(needs.setup-test-matrix.outputs.matrix) }}
+ *     steps:
+ *      - name: Checkout idc-isle-dc
+ *        uses: actions/checkout@v2
+ *      - name: Run ${matrix.test}
+ *        run: make test test=${matrix.test}
+ *
+ * Where the value of the 'matrix' parameter is an instance of this interface.
+ */
 export interface Matrix {
   [index: string]: string[] | object[]
 }
@@ -49,17 +70,9 @@ async function run(): Promise<void> {
     const globber = await glob.create(`${dir}${fileGlob}`, {})
     const files: string[] = []
 
-    for await (const file of globber.globGenerator()) {
-      const basename = path.basename(file)
-      if (basename.startsWith('.')) {
-        core.debug(`Ignoring hidden file ${file}`)
-      } else {
-        core.debug(`Got file ${file}, added as ${basename}`)
-        files.push(basename)
-      }
-    }
+    await filterFiles(globber, files)
 
-    matrix = apply(include, exclude, key, matrix, append, files)
+    matrix = apply(matrix, files, key, include, exclude, append)
 
     core.debug(`Output matrix: ${matrix}`)
     core.setOutput('matrix', matrix)
@@ -68,13 +81,106 @@ async function run(): Promise<void> {
   }
 }
 
+/**
+ * Populates the supplied files array using the Globber.
+ *
+ * For each file supplied by Globber: take the basename of the file.  If
+ * the basename begins with a '.', skip the file.  Otherwise, add the basename
+ * to the supplied files array.
+ *
+ * @param globber a configured Globber ready to be invoked
+ * @param files an empty array of string, to be populated by base filenames obtained from the Globber
+ */
+export async function filterFiles(
+  globber: Globber,
+  files: string[]
+): Promise<void> {
+  for await (const file of globber.globGenerator()) {
+    const basename = path.basename(file)
+    if (basename.startsWith('.')) {
+      core.debug(`Ignoring hidden file ${file}`)
+    } else {
+      core.debug(`Got file ${file}, added as ${basename}`)
+      files.push(basename)
+    }
+  }
+}
+
+/**
+ * Adds the supplied files to the given Matrix indexed by the supplied key.
+ *
+ * In the simplest case, include and exclude are false, and append is true.  The
+ * supplied Matrix is an empty object.
+ *
+ * In this simplest case, if the supplied files array contains a single file,
+ * 'moo.sh' and the supplied 'key' is 'test', then this function will return
+ * an object with a single key 'test', with an array containing a single
+ * element, a string value 'foo.sh':
+ * {
+ *   "test": [ "foo.sh" ]
+ * }
+ *
+ * If the supplied files array contains multiple elements, they will all be
+ * keyed by the supplied key:
+ * {
+ *   "test": [ "foo.sh", "bar.sh", "baz.sh" ]
+ * }
+ *
+ * If 'include' is true, the supplied Matrix will have the 'include' key added,
+ * which keys an array of objects using the supplied 'key' and files.  In the
+ * following example, the supplied matrix is the empty object, 'include' is
+ * true, and the 'key' is "test",
+ * e.g.:
+ * {
+ *   "include": [
+ *     { "test": "include-me.sh" },
+ *     { "test": "and-also-me.sh" }
+ *   ]
+ * }
+ *
+ * Similarly, if 'exclude' is true, the supplied Matrix will have the 'exclude'
+ * key added; behaving just like 'include', except using 'exclude':
+ * {
+ *   "exclude": [
+ *     { "test": "exclude-me.sh" },
+ *     { "test": "and-also-me.sh" }
+ *   ]
+ * }
+ *
+ * Multiple calls to `apply(...)` augments the supplied Matrix.  For example,
+ * an initial call to apply with a 'key' equal to 'test' and an array of files
+ * results in:
+ * {
+ *   "test": [ "smoke-test.sh", "super-long-test.sh" ]
+ * }
+ * Using the resulting Matrix in a subsequent call to apply, setting 'exclude'
+ * to true with another array of files will result in an additional key,
+ * 'exclude' being added:
+ * {
+ *   "test": [ "smoke-test.sh", "super-long-test.sh" ],
+ *   "exclude": [
+ *     { "test": "super-long-test.sh" }
+ *   ]
+ * }
+ *
+ * Therefore, `apply(...)` can be invoked multiple times to augment a Matrix
+ * that is ultimately used by the GitHub 'matrix' strategy to select tests and
+ * execute them in parallel.
+ *
+ * @param matrix the Matrix which must be an object, but may be empty (i.e. no keys)
+ * @param files an array of file names (base names, not absolute paths) representing tests to be executed by a test matrix
+ * @param key the matrix key
+ * @param include if true, adds the files as an array of objects under the special key 'include'
+ * @param exclude if true, adds the files as an array of objects under the special key 'exclude'
+ * @param append if true, appends the files to an existing array, otherwise overwrites the array
+ */
 export function apply(
+  matrix: Matrix,
+  files: string[],
+  key: string,
   include: boolean,
   exclude: boolean,
-  key: string,
-  matrix: Matrix,
-  append: boolean,
-  files: string[]
+  append: boolean
 ): Matrix {
   if (include && exclude) {
     throw new Error(
