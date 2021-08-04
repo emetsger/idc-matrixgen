@@ -1,10 +1,10 @@
 import {wait} from '../src/wait'
-import { apply, filterFiles } from "../src/main"
+import {apply, filterFiles} from '../src/main'
 import * as process from 'process'
 import * as cp from 'child_process'
 import * as path from 'path'
 import {expect, test} from '@jest/globals'
-import * as glob from "@actions/glob"
+import * as glob from '@actions/glob'
 
 test('throws invalid number', async () => {
   const input = parseInt('foo', 10)
@@ -55,10 +55,14 @@ test('test defaults', () => {
 
 test('test apply', () => {
   const initialMatrix = JSON.parse('{}')
-  const result = apply(initialMatrix, [
-    "file1",
-    "file2"
-  ], "test", false, false, true)
+  const result = apply(
+    initialMatrix,
+    ['file1', 'file2'],
+    'test',
+    false,
+    false,
+    true
+  )
   expect(Object.keys(result).length).toEqual(1)
   expect('test' in result).toEqual(true)
   expect(result['test']).toEqual(['file1', 'file2'])
@@ -66,10 +70,14 @@ test('test apply', () => {
 
 test('test include', () => {
   const initialMatrix = JSON.parse('{}')
-  const result = apply(initialMatrix, [
-    "file1",
-    "file2"
-  ], "test", true, false, true)
+  const result = apply(
+    initialMatrix,
+    ['file1', 'file2'],
+    'test',
+    true,
+    false,
+    true
+  )
   expect(Object.keys(result).length).toEqual(1)
   expect('include' in result).toEqual(true)
   expect(result['include']).toEqual([{test: 'file1'}, {test: 'file2'}])
@@ -77,10 +85,14 @@ test('test include', () => {
 
 test('test exclude', () => {
   const initialMatrix = JSON.parse('{}')
-  const result = apply(initialMatrix, [
-    "file1",
-    "file2"
-  ], "test", false, true, true)
+  const result = apply(
+    initialMatrix,
+    ['file1', 'file2'],
+    'test',
+    false,
+    true,
+    true
+  )
   expect(Object.keys(result).length).toEqual(1)
   expect('exclude' in result).toEqual(true)
   expect(result['exclude']).toEqual([{test: 'file1'}, {test: 'file2'}])
@@ -89,11 +101,15 @@ test('test exclude', () => {
 test('apply then exclude', () => {
   const initialMatrix = JSON.parse('{}')
 
-  let result = apply(initialMatrix, [
-    "file1",
-    "file2"
-  ], "test", false, false, true)
-  result = apply(result, ["file1"], "test", false, true, true)
+  let result = apply(
+    initialMatrix,
+    ['file1', 'file2'],
+    'test',
+    false,
+    false,
+    true
+  )
+  result = apply(result, ['file1'], 'test', false, true, true)
   expect(Object.keys(result).length).toEqual(2)
   expect('test' in result).toEqual(true)
   expect(result['test']).toEqual(['file1', 'file2'])
@@ -111,7 +127,7 @@ test('glob hidden files', async () => {
   const bareGlobberFiles = []
   let hiddenFound = false
   for (const f of result) {
-    if (".hidden.sh" === path.basename(f)) {
+    if ('.hidden.sh' === path.basename(f)) {
       hiddenFound = true
     } else {
       bareGlobberFiles.push(path.basename(f))
@@ -126,12 +142,11 @@ test('glob hidden files', async () => {
   await filterFiles(await glob.create(`${dir}${globpattern}`), files)
 
   for (const f of files) {
-    if (".hidden.sh" === path.basename(f)) {
+    if ('.hidden.sh' === path.basename(f)) {
       hiddenFound = true
     }
   }
 
   expect(hiddenFound).toEqual(false)
   expect(files).toEqual(bareGlobberFiles)
-
 })
