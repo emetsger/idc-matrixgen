@@ -20,5 +20,30 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: ./
+        id: moo
+        env:
+          ACTIONS_RUNNER_DEBUG: true
         with:
-          milliseconds: 1000
+          key: test
+          dir: 'src/'
+          glob: '*.ts'
+      - uses: ./
+        id: foo
+        env:
+          ACTIONS_RUNNER_DEBUG: true
+        with:
+          matrix: ${{ steps.moo.outputs.matrix }}
+          key: test
+          dir: './'
+          glob: '*.js'
+          append: true
+      - uses: ./
+        id: boo
+        env:
+          ACTIONS_RUNNER_DEBUG: true
+        with:
+          matrix: ${{ steps.foo.outputs.matrix }}
+          key: test
+          exclude: true
+          dir: './'
+          glob: 'package*.json'

@@ -1,11 +1,37 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'IDC test matrix generator'
+description: 'Generates a matrix of test suites'
+author: 'emetsger@jhu.edu'
 inputs:
-  milliseconds: # change this
+  dir:
+    required: false
+    description: 'Directory (relative to the CWD) containing test controllers (e.g. the directory containing 01-end-to-end.sh)'
+    default: 'tests/'
+  glob:
+    required: false
+    description: 'File glob matching tests to include in the matrix'
+    default: '*.sh'
+  matrix:
+    required: false
+    description: 'Existing matrix to modify, useful when adding includes or excludes.'
+  append:
+    required: false
+    description: 'Whether to append to, or overwrite, matching entries in the supplied matrix'
+    default: 'true'
+  key:
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: 'The matrix key being added (e.g. arbitrary properties like "test" or "version")'
+    default: 'test'
+  include:
+    required: false
+    description: 'If the results should be added as an "include" to the matrix; mutually exclusive of "exclude"'
+    default: 'false'
+  exclude:
+    required: false
+    description: 'If the results should be added as an "exclude" to the matrix; mutually exclusive of "include"'
+    default: 'false'
+outputs:
+  matrix:
+    description: 'The resulting matrix'
 runs:
   using: 'node12'
   main: 'dist/index.js'
