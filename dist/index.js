@@ -42,14 +42,13 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
     function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.apply = void 0;
+exports.apply = exports.filterFiles = void 0;
 const core = __importStar(__nccwpck_require__(186));
 const glob = __importStar(__nccwpck_require__(90));
 const path = __importStar(__nccwpck_require__(622));
 const INCLUDE = 'include';
 const EXCLUDE = 'exclude';
 function run() {
-    var e_1, _a;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             let dir = core.getInput('dir');
@@ -78,27 +77,8 @@ function run() {
             core.debug(`include is ${include}`);
             const globber = yield glob.create(`${dir}${fileGlob}`, {});
             const files = [];
-            try {
-                for (var _b = __asyncValues(globber.globGenerator()), _c; _c = yield _b.next(), !_c.done;) {
-                    const file = _c.value;
-                    const basename = path.basename(file);
-                    if (basename.startsWith('.')) {
-                        core.debug(`Ignoring hidden file ${file}`);
-                    }
-                    else {
-                        core.debug(`Got file ${file}, added as ${basename}`);
-                        files.push(basename);
-                    }
-                }
-            }
-            catch (e_1_1) { e_1 = { error: e_1_1 }; }
-            finally {
-                try {
-                    if (_c && !_c.done && (_a = _b.return)) yield _a.call(_b);
-                }
-                finally { if (e_1) throw e_1.error; }
-            }
-            matrix = apply(include, exclude, key, matrix, append, files);
+            yield filterFiles(globber, files);
+            matrix = apply(matrix, files, key, include, exclude, append);
             core.debug(`Output matrix: ${matrix}`);
             core.setOutput('matrix', matrix);
         }
@@ -107,7 +87,111 @@ function run() {
         }
     });
 }
-function apply(include, exclude, key, matrix, append, files) {
+/**
+ * Populates the supplied files array using the Globber.
+ *
+ * For each file supplied by Globber: take the basename of the file.  If
+ * the basename begins with a '.', skip the file.  Otherwise, add the basename
+ * to the supplied files array.
+ *
+ * @param globber a configured Globber ready to be invoked
+ * @param files an empty array of string, to be populated by base filenames obtained from the Globber
+ */
+function filterFiles(globber, files) {
+    var e_1, _a;
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            for (var _b = __asyncValues(globber.globGenerator()), _c; _c = yield _b.next(), !_c.done;) {
+                const file = _c.value;
+                const basename = path.basename(file);
+                if (basename.startsWith('.')) {
+                    core.debug(`Ignoring hidden file ${file}`);
+                }
+                else {
+                    core.debug(`Got file ${file}, added as ${basename}`);
+                    files.push(basename);
+                }
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (_c && !_c.done && (_a = _b.return)) yield _a.call(_b);
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+    });
+}
+exports.filterFiles = filterFiles;
+/**
+ * Adds the supplied files to the given Matrix indexed by the supplied key.
+ *
+ * In the simplest case, include and exclude are false, and append is true.  The
+ * supplied Matrix is an empty object.
+ *
+ * In this simplest case, if the supplied files array contains a single file,
+ * 'moo.sh' and the supplied 'key' is 'test', then this function will return
+ * an object with a single key 'test', with an array containing a single
+ * element, a string value 'foo.sh':
+ * {
+ *   "test": [ "foo.sh" ]
+ * }
+ *
+ * If the supplied files array contains multiple elements, they will all be
+ * keyed by the supplied key:
+ * {
+ *   "test": [ "foo.sh", "bar.sh", "baz.sh" ]
+ * }
+ *
+ * If 'include' is true, the supplied Matrix will have the 'include' key added,
+ * which keys an array of objects using the supplied 'key' and files.  In the
+ * following example, the supplied matrix is the empty object, 'include' is
+ * true, and the 'key' is "test",
+ * e.g.:
+ * {
+ *   "include": [
+ *     { "test": "include-me.sh" },
+ *     { "test": "and-also-me.sh" }
+ *   ]
+ * }
+ *
+ * Similarly, if 'exclude' is true, the supplied Matrix will have the 'exclude'
+ * key added; behaving just like 'include', except using 'exclude':
+ * {
+ *   "exclude": [
+ *     { "test": "exclude-me.sh" },
+ *     { "test": "and-also-me.sh" }
+ *   ]
+ * }
+ *
+ * Multiple calls to `apply(...)` augments the supplied Matrix.  For example,
+ * an initial call to apply with a 'key' equal to 'test' and an array of files
+ * results in:
+ * {
+ *   "test": [ "smoke-test.sh", "super-long-test.sh" ]
+ * }
+ * Using the resulting Matrix in a subsequent call to apply, setting 'exclude'
+ * to true with another array of files will result in an additional key,
+ * 'exclude' being added:
+ * {
+ *   "test": [ "smoke-test.sh", "super-long-test.sh" ],
+ *   "exclude": [
+ *     { "test": "super-long-test.sh" }
+ *   ]
+ * }
+ *
+ * Therefore, `apply(...)` can be invoked multiple times to augment a Matrix
+ * that is ultimately used by the GitHub 'matrix' strategy to select tests and
+ * execute them in parallel.
+ *
+ * @param matrix the Matrix which must be an object, but may be empty (i.e. no keys)
+ * @param files an array of file names (base names, not absolute paths) representing tests to be executed by a test matrix
+ * @param key the matrix key
+ * @param include if true, adds the files as an array of objects under the special key 'include'
+ * @param exclude if true, adds the files as an array of objects under the special key 'exclude'
+ * @param append if true, appends the files to an existing array, otherwise overwrites the array
+ */
+function apply(matrix, files, key, include, exclude, append) {
     if (include && exclude) {
         throw new Error('"include" and "exclude" are mutually exclusive, only one may be true');
     }
