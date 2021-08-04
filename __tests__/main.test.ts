@@ -1,9 +1,10 @@
 import {wait} from '../src/wait'
-import {apply} from '../src/main'
+import { apply, filterFiles } from "../src/main"
 import * as process from 'process'
 import * as cp from 'child_process'
 import * as path from 'path'
 import {expect, test} from '@jest/globals'
+import * as glob from "@actions/glob"
 
 test('throws invalid number', async () => {
   const input = parseInt('foo', 10)
@@ -54,10 +55,10 @@ test('test defaults', () => {
 
 test('test apply', () => {
   const initialMatrix = JSON.parse('{}')
-  const result = apply(false, false, 'test', initialMatrix, true, [
-    'file1',
-    'file2'
-  ])
+  const result = apply(initialMatrix, [
+    "file1",
+    "file2"
+  ], "test", false, false, true)
   expect(Object.keys(result).length).toEqual(1)
   expect('test' in result).toEqual(true)
   expect(result['test']).toEqual(['file1', 'file2'])
@@ -65,10 +66,10 @@ test('test apply', () => {
 
 test('test include', () => {
   const initialMatrix = JSON.parse('{}')
-  const result = apply(true, false, 'test', initialMatrix, true, [
-    'file1',
-    'file2'
-  ])
+  const result = apply(initialMatrix, [
+    "file1",
+    "file2"
+  ], "test", true, false, true)
   expect(Object.keys(result).length).toEqual(1)
   expect('include' in result).toEqual(true)
   expect(result['include']).toEqual([{test: 'file1'}, {test: 'file2'}])
@@ -76,10 +77,10 @@ test('test include', () => {
 
 test('test exclude', () => {
   const initialMatrix = JSON.parse('{}')
-  const result = apply(false, true, 'test', initialMatrix, true, [
-    'file1',
-    'file2'
-  ])
+  const result = apply(initialMatrix, [
+    "file1",
+    "file2"
+  ], "test", false, true, true)
   expect(Object.keys(result).length).toEqual(1)
   expect('exclude' in result).toEqual(true)
   expect(result['exclude']).toEqual([{test: 'file1'}, {test: 'file2'}])
@@ -88,14 +89,49 @@ test('test exclude', () => {
 test('apply then exclude', () => {
   const initialMatrix = JSON.parse('{}')
 
-  let result = apply(false, false, 'test', initialMatrix, true, [
-    'file1',
-    'file2'
-  ])
-  result = apply(false, true, 'test', result, true, ['file1'])
+  let result = apply(initialMatrix, [
+    "file1",
+    "file2"
+  ], "test", false, false, true)
+  result = apply(result, ["file1"], "test", false, true, true)
   expect(Object.keys(result).length).toEqual(2)
   expect('test' in result).toEqual(true)
   expect(result['test']).toEqual(['file1', 'file2'])
   expect('exclude' in result).toEqual(true)
   expect(result['exclude']).toEqual([{test: 'file1'}])
+})
+
+test('glob hidden files', async () => {
+  const dir = path.join(__dirname, 'testdir/')
+  const globpattern = '*.sh'
+
+  // make sure that the globber "sees" a hidden file.
+  let globber = await glob.create(`${dir}${globpattern}`)
+  const result = await globber.glob()
+  const bareGlobberFiles = []
+  let hiddenFound = false
+  for (const f of result) {
+    if (".hidden.sh" === path.basename(f)) {
+      hiddenFound = true
+    } else {
+      bareGlobberFiles.push(path.basename(f))
+    }
+  }
+  expect(hiddenFound).toEqual(true)
+
+  // now, invoke filterFiles(...) and demonstrate that the results are the same
+  // as the bare globber minus the hidden file.
+  hiddenFound = false
+  const files: string[] = []
+  await filterFiles(await glob.create(`${dir}${globpattern}`), files)
+
+  for (const f of files) {
+    if (".hidden.sh" === path.basename(f)) {
+      hiddenFound = true
+    }
+  }
+
+  expect(hiddenFound).toEqual(false)
+  expect(files).toEqual(bareGlobberFiles)
+
 })
