@@ -55,7 +55,7 @@ This will produce a test matrix that includes _all_ test controllers in the `tes
 
 ## Exclude nightly jobs
 
-There may be tests that are very long running, more suited to nightly execution.  They take to long to run when PRs are submitted for review and merging, so ideally the test matrix used for PRs would exclude them.  Here's an example with minimal boilerplate.  
+There may be tests that are very long running, more suited to nightly execution.  They take too long to run when PRs are submitted for review and merging, so ideally the test matrix used for PRs would exclude them.  Here's an example with minimal boilerplate.  
 
 Note that the first `step` generates the matrix, and the subsequent step amends it.  The `outputs` of the `setup-test-matrix` `job` was modified to reference the step that excluded the nightly jobs.
 
