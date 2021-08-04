@@ -104,7 +104,8 @@ If the `tests` directory contained a hypothetical test named `21-large-file-deri
     "12-media-tests.sh",
     "13-migration-entity-resolution.sh",
     "20-export-tests.sh",
-    "21-role-permission-tests.sh"
+    "21-role-permission-tests.sh",
+    "21-large-file-derivatives-nightly.sh"
   ],
   "exclude": [
     {
