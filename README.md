@@ -181,6 +181,26 @@ You can always view the up-to-date list [here](./action.yml)
 
 To debug this action, add the secret `ACTIONS_STEP_DEBUG` to your repository, with a value of `true`.  Trigger the action (e.g. push a commit to a PR, or open a new PR), and debug statements should be emitted in the GH actions job log.
 
+The generated matrix can also be dumped in a relatively simple step:
+```yaml
+jobs:
+  setup-test-matrix:
+    name: Generate idc-isle-dc test matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.test-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout idc-isle-dc
+        uses: actions/checkout@v2
+      - name: Generate Test Matrix
+        id: test-matrix
+        uses: emetsger/idc-matrixgen@f228f237b87c9aa46b8a361d7adc62931682e210
+      - name: Dump Test Matrix
+        env:
+          MATRIX: ${{ steps.test-matrix.outputs.matrix }}
+        run: echo ${MATRIX}
+```
+
 ## Testing
 
 Checkout this repository and run `npm run build ; npm run test`
